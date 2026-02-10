@@ -1,6 +1,19 @@
 
 import React, { useState, useMemo } from 'react';
-import { Clock, User, CheckCircle2, MoreHorizontal, GripVertical, Filter, X, Calendar, Search, AlertCircle } from 'lucide-react';
+import { 
+  Clock, 
+  User, 
+  CheckCircle2, 
+  MoreHorizontal, 
+  GripVertical, 
+  Filter, 
+  X, 
+  Calendar, 
+  Search, 
+  AlertCircle, 
+  PackageOpen, 
+  PlusCircle 
+} from 'lucide-react';
 import { Language } from '../App';
 
 type TaskStatus = 'todo' | 'inprogress' | 'review' | 'done';
@@ -26,11 +39,26 @@ const INITIAL_TASKS: KanbanTask[] = [
 ];
 
 const kanbanTranslations = {
-  ko: { todo: '할 일', inprog: '진행 중', review: '검토 중', done: '완료', add: '+ 새 업무 추가', filter: '필터', assignee: '담당자', all: '전체', deadline: '마감일', clear: '초기화', search: '검색...', priority: '중요도', high: '높음', medium: '보통', low: '낮음' },
-  en: { todo: 'To-do', inprog: 'In Progress', review: 'Review', done: 'Done', add: '+ Add New Task', filter: 'Filter', assignee: 'Assignee', all: 'All', deadline: 'Deadline', clear: 'Clear', search: 'Search...', priority: 'Priority', high: 'High', medium: 'Medium', low: 'Low' },
-  zh: { todo: '待办', inprog: '进行中', review: '审核中', done: '已完成', add: '+ 添加新任务', filter: '过滤', assignee: '负责人', all: '全部', deadline: '截止日期', clear: '清除', search: '搜索...', priority: '优先级', high: '高', medium: '中', low: '低' },
-  th: { todo: 'ที่ต้องทำ', inprog: 'กำลังทำ', review: 'ตรวจสอบ', done: 'เสร็จสิ้น', add: '+ เพิ่มงานใหม่', filter: 'กรอง', assignee: 'ผู้รับผิดชอบ', all: 'ทั้งหมด', deadline: 'กำหนดการ', clear: 'ล้างค่า', search: 'ค้นหา...', priority: 'ความสำคัญ', high: 'สูง', medium: 'กลาง', low: 'ต่ำ' },
-  lo: { todo: 'ທີ່ຕ້ອງເຮັດ', inprog: 'ກຳລັງເຮັດ', review: 'ກວດສອບ', done: 'ສຳເລັດ', add: '+ ເພີ່ມວຽກໃໝ່', filter: 'ການກັ່ນຕອງ', assignee: 'ຜູ້ຮັບຜິດຊອບ', all: 'ທັງໝົດ', deadline: 'ກຳນົດສົ່ງ', clear: 'ລ້າງ', search: 'ຄົ້ນຫາ...', priority: 'ຄວາມສຳຄັນ', high: 'ສູງ', medium: 'ກາງ', low: 'ຕ່ຳ' }
+  ko: { 
+    todo: '할 일', inprog: '진행 중', review: '검토 중', done: '완료', add: '새 업무 추가', filter: '필터', assignee: '담당자', all: '전체', deadline: '마감일', clear: '초기화', search: '검색...', priority: '중요도', high: '높음', medium: '보통', low: '낮음',
+    empty: '업무가 없습니다', emptySub: '새로운 업무를 추가하여 프로젝트를 시작하세요.' 
+  },
+  en: { 
+    todo: 'To-do', inprog: 'In Progress', review: 'Review', done: 'Done', add: 'Add Task', filter: 'Filter', assignee: 'Assignee', all: 'All', deadline: 'Deadline', clear: 'Clear', search: 'Search...', priority: 'Priority', high: 'High', medium: 'Medium', low: 'Low',
+    empty: 'No tasks here', emptySub: 'Add a new task to get this project moving.'
+  },
+  zh: { 
+    todo: '待办', inprog: '进行中', review: '审核中', done: '已完成', add: '添加任务', filter: '过滤', assignee: '负责人', all: '全部', deadline: '截止日期', clear: '清除', search: '搜索...', priority: '优先级', high: '高', medium: '中', low: '低',
+    empty: '暂无任务', emptySub: '添加新任务以启动项目。'
+  },
+  th: { 
+    todo: 'ที่ต้องทำ', inprog: 'กำลังทำ', review: 'ตรวจสอบ', done: 'เสร็จสิ้น', add: 'เพิ่มงาน', filter: 'กรอง', assignee: 'ผู้รับผิดชอบ', all: 'ทั้งหมด', deadline: 'กำหนดการ', clear: 'ล้างค่า', search: 'ค้นหา...', priority: 'ความสำคัญ', high: 'สูง', medium: 'กลาง', low: 'ต่ำ',
+    empty: 'ไม่มีงาน', emptySub: 'เพิ่มงานใหม่เพื่อเริ่มดำเนินการโครงการ'
+  },
+  lo: { 
+    todo: 'ທີ່ຕ້ອງເຮັດ', inprog: 'ກຳລັງເຮັດ', review: 'ກວດສອບ', done: 'ສຳເລັດ', add: 'ເພີ່ມວຽກ', filter: 'ການກັ່ນຕອງ', assignee: 'ຜູ້ຮັບຜິດຊອບ', all: 'ທັງໝົດ', deadline: 'ກຳນົດສົ່ງ', clear: 'ລ້າງ', search: 'ຄົ້ນຫາ...', priority: 'ຄວາມສຳຄັນ', high: 'ສູງ', medium: 'ກາງ', low: 'ຕ່ຳ',
+    empty: 'ບໍ່ມີວຽກ', emptySub: 'ເພີ່ມວຽກໃໝ່ເພື່ອເລີ່ມຕົ້ນໂຄງການ'
+  }
 };
 
 interface Props {
@@ -135,7 +163,7 @@ const KanbanBoard: React.FC<Props> = ({ lang }) => {
             <Filter size={16} /> {kt.filter}
           </button>
           <button className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-indigo-700 transition-all">
-            {kt.add}
+            + {kt.add}
           </button>
         </div>
       </div>
@@ -257,7 +285,7 @@ const KanbanBoard: React.FC<Props> = ({ lang }) => {
               </div>
               <button className="text-slate-400 hover:text-slate-600"><MoreHorizontal size={16} /></button>
             </div>
-            <div className="flex-1 p-3 space-y-3 overflow-y-auto min-h-[100px]">
+            <div className="flex-1 p-3 flex flex-col space-y-3 overflow-y-auto min-h-[100px]">
               {filteredTasks.filter(t => t.status === column.id).map(task => (
                 <div 
                   key={task.id}
@@ -297,9 +325,24 @@ const KanbanBoard: React.FC<Props> = ({ lang }) => {
                   </div>
                 </div>
               ))}
+              
+              {/* Enhanced Empty State */}
               {filteredTasks.filter(t => t.status === column.id).length === 0 && (
-                <div className="h-20 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center text-slate-400 text-xs italic">
-                  Empty
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in-95 duration-500">
+                  <div className="relative mb-6">
+                    <div className="absolute -inset-4 bg-indigo-50 rounded-full scale-150 blur-2xl opacity-40"></div>
+                    <PackageOpen size={72} strokeWidth={1} className="text-slate-300 relative z-10" />
+                  </div>
+                  <div className="space-y-2 relative z-10">
+                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">{kt.empty}</h4>
+                    <p className="text-[10px] text-slate-400 max-w-[180px] mx-auto leading-relaxed">
+                      {kt.emptySub}
+                    </p>
+                  </div>
+                  <button className="mt-8 flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 text-indigo-600 rounded-xl text-[10px] font-black shadow-sm hover:shadow-md hover:border-indigo-300 transition-all active:scale-95 group">
+                    <PlusCircle size={14} className="group-hover:rotate-90 transition-transform duration-300" /> 
+                    {kt.add}
+                  </button>
                 </div>
               )}
             </div>

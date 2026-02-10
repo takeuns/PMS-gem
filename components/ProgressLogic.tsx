@@ -11,6 +11,88 @@ interface TaskLogicData {
   duration: number;
 }
 
+interface TaskResult extends TaskLogicData {
+  expected: number;
+  gap: number;
+  status: string;
+  color: string;
+}
+
+interface TaskItemProps {
+  task: TaskLogicData;
+  result?: TaskResult;
+  onUpdate: (id: string, field: keyof TaskLogicData, value: string | number) => void;
+  onRemove: (id: string) => void;
+}
+
+/**
+ * Reusable component for individual task input fields and status display.
+ */
+const TaskItem: React.FC<TaskItemProps> = ({ task, result, onUpdate, onRemove }) => {
+  return (
+    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4 group animate-in fade-in slide-in-from-right-2 duration-300">
+      <div className="flex justify-between items-center">
+        <input 
+          className="font-bold text-slate-700 outline-none border-b border-transparent focus:border-indigo-300 transition-colors w-full mr-4"
+          value={task.name}
+          onChange={(e) => onUpdate(task.id, 'name', e.target.value)}
+          placeholder="업무 명칭 입력..."
+        />
+        <button 
+          onClick={() => onRemove(task.id)}
+          className="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+          title="업무 삭제"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1">
+          <label className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
+            <Weight size={10} /> 가중치 (Weight)
+          </label>
+          <input 
+            type="number"
+            min="1"
+            max="10"
+            value={task.weight}
+            onChange={(e) => onUpdate(task.id, 'weight', Number(e.target.value))}
+            className="w-full bg-slate-50 border border-slate-100 rounded-lg px-2 py-1.5 text-sm font-bold text-slate-600 outline-none focus:ring-1 focus:ring-indigo-500/20"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
+            <Clock size={10} /> 업무 기간 (Days)
+          </label>
+          <input 
+            type="number"
+            min="1"
+            value={task.duration}
+            onChange={(e) => onUpdate(task.id, 'duration', Number(e.target.value))}
+            className="w-full bg-slate-50 border border-slate-100 rounded-lg px-2 py-1.5 text-sm font-bold text-slate-600 outline-none focus:ring-1 focus:ring-indigo-500/20"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex justify-between items-center">
+          <label className="text-[10px] font-bold text-slate-400 uppercase">실제 진행률</label>
+          <span className={`text-xs font-black ${result?.color}`}>{task.progress}% ({result?.status})</span>
+        </div>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={task.progress}
+          onChange={(e) => onUpdate(task.id, 'progress', Number(e.target.value))}
+          className="w-full h-1.5 bg-indigo-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+        />
+      </div>
+    </div>
+  );
+};
+
 const ProgressLogic: React.FC = () => {
   const [projectDaysElapsed, setProjectDaysElapsed] = useState(15);
   const [tasks, setTasks] = useState<TaskLogicData[]>([
@@ -20,8 +102,8 @@ const ProgressLogic: React.FC = () => {
   ]);
 
   const addTask = () => {
-    const newId = (tasks.length + 1).toString();
-    setTasks([...tasks, { id: newId, name: `New Task ${newId}`, weight: 1, progress: 0, duration: 30 }]);
+    const newId = Math.random().toString(36).substr(2, 9);
+    setTasks([...tasks, { id: newId, name: `New Task ${tasks.length + 1}`, weight: 1, progress: 0, duration: 30 }]);
   };
 
   const removeTask = (id: string) => {
@@ -50,7 +132,7 @@ const ProgressLogic: React.FC = () => {
       if (gap < -15) { status = '위험'; color = 'text-red-600'; }
       else if (gap < 0) { status = '지연'; color = 'text-amber-600'; }
 
-      return { ...task, expected, gap, status, color };
+      return { ...task, expected, gap, status, color } as TaskResult;
     });
 
     const totalActual = totalWeight > 0 ? Math.round(weightedActualProgress / totalWeight) : 0;
@@ -92,7 +174,7 @@ const ProgressLogic: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        {/* Task Editor */}
+        {/* Task Editor Container */}
         <div className="space-y-6">
           <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-inner">
             <div className="flex justify-between items-center mb-6">
@@ -112,7 +194,8 @@ const ProgressLogic: React.FC = () => {
                 </div>
                 <button 
                   onClick={addTask}
-                  className="p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  className="p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-md active:scale-95"
+                  title="새 업무 추가"
                 >
                   <Plus size={18} />
                 </button>
@@ -120,69 +203,15 @@ const ProgressLogic: React.FC = () => {
             </div>
             
             <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-              {tasks.map((task) => {
-                const result = projectSummary.taskResults.find(r => r.id === task.id);
-                return (
-                  <div key={task.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4 group">
-                    <div className="flex justify-between items-center">
-                      <input 
-                        className="font-bold text-slate-700 outline-none border-b border-transparent focus:border-indigo-300 transition-colors"
-                        value={task.name}
-                        onChange={(e) => updateTask(task.id, 'name', e.target.value)}
-                      />
-                      <button 
-                        onClick={() => removeTask(task.id)}
-                        className="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                          <Weight size={10} /> 가중치 (Weight)
-                        </label>
-                        <input 
-                          type="number"
-                          min="1"
-                          max="10"
-                          value={task.weight}
-                          onChange={(e) => updateTask(task.id, 'weight', Number(e.target.value))}
-                          className="w-full bg-slate-50 border border-slate-100 rounded-lg px-2 py-1.5 text-sm font-bold text-slate-600 outline-none focus:ring-1 focus:ring-indigo-500/20"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                          <Clock size={10} /> 업무 기간 (Days)
-                        </label>
-                        <input 
-                          type="number"
-                          min="1"
-                          value={task.duration}
-                          onChange={(e) => updateTask(task.id, 'duration', Number(e.target.value))}
-                          className="w-full bg-slate-50 border border-slate-100 rounded-lg px-2 py-1.5 text-sm font-bold text-slate-600 outline-none focus:ring-1 focus:ring-indigo-500/20"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase">실제 진행률</label>
-                        <span className={`text-xs font-black ${result?.color}`}>{task.progress}% ({result?.status})</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={task.progress}
-                        onChange={(e) => updateTask(task.id, 'progress', Number(e.target.value))}
-                        className="w-full h-1.5 bg-indigo-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+              {tasks.map((task) => (
+                <TaskItem 
+                  key={task.id}
+                  task={task}
+                  result={projectSummary.taskResults.find(r => r.id === task.id)}
+                  onUpdate={updateTask}
+                  onRemove={removeTask}
+                />
+              ))}
             </div>
           </div>
         </div>
