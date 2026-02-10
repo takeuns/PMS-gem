@@ -1,0 +1,5 @@
+{
+  "name": "System Dev Project Manager - Schema Architect",
+  "description": "A comprehensive tool for designing and visualizing PostgreSQL schemas for project management systems, including automated progress logic and ERD documentation.",
+  "requestFramePermissions": []
+}
